@@ -5,7 +5,7 @@
 #define OUT_COMMENT 0
 
 int getLine(char line[], int maxline);
-void removeComments(char lineWithComments[], char lineWithoutComments[], int length);
+int removeComments(char lineWithComments[], char lineWithoutComments[], int length, int status);
 
 int main()
 {
@@ -13,35 +13,56 @@ int main()
 	int max;
 	int status = OUT_COMMENT;
 	char line[MAXLINE];
+	char lineWithoutComments[MAXLINE];
 
 	max = 0;
 
 	while ((len = getLine(line, MAXLINE)) > 0)
 	{
-		char lineWithoutComments[MAXLINE];
-		removeComments(line, lineWithoutComments, len);
-		printf("%s\n", lineWithoutComments);
+		printf("before removing comments: %s\n", lineWithoutComments);
+		status = removeComments(line, lineWithoutComments, len, status);
+		printf("after removing comments: %s\n", lineWithoutComments);
 	}
 
 	return 0;
 }
 
-void removeComments(char lineWithComments[], char lineWithoutComments[], int length)
+int removeComments(char lineWithComments[], char lineWithoutComments[], int length, int status)
 {
-	int status = OUT_COMMENT;
-	int i, counter;
+	int multiLine = status;
+	int i, current, next, counter;
 	for (i = 0, counter = 0; i < length; i++)
-	{	
-		if(status == IN_COMMENT || (lineWithComments[i] == '/' && i + 1 < length && lineWithComments[i+1] == '/'))
+	{
+		current = lineWithComments[i];
+		if (i + 1 == length)
+			next = '\0';
+		else
+			next = lineWithComments[i+1];
+
+		if (current == '/' && (next == '/' || next == '*'))
 		{
+			++i;
+			if(next == '*')
+				multiLine = IN_COMMENT;
+
 			status = IN_COMMENT;
 		}
-		else
+		else if (status == IN_COMMENT &&  current == '*' && next == '/')
+		{
+			++i;
+			multiLine = OUT_COMMENT;
+			status = OUT_COMMENT;
+		}
+		else if (status == OUT_COMMENT)
 		{
 			lineWithoutComments[counter] = lineWithComments[i];
 			++counter;
 		}
-	}		
+
+		lineWithoutComments[counter + 1] = '\0';
+	}
+
+	return multiLine;
 }
 int getLine(char line[], int maxline)
 {
@@ -58,4 +79,5 @@ int getLine(char line[], int maxline)
 	line[i] = '\0';
 	return i;
 }
-	
+
+
