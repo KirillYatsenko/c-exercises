@@ -22,12 +22,11 @@ void newline(char input[], uint16_t index, uint16_t length)
         return;
 
     uint16_t nextStop = (index / N + 1) * N + 1;
-    uint16_t delimeter;
+    int32_t delimeter;
 
-    for(delimeter = nextStop; delimeter >= index && delimeter <= nextStop && input[delimeter] != ' ' && input[delimeter] != '\t'; --delimeter);
-    ++delimeter;
+    for(delimeter = nextStop; delimeter >= index && input[delimeter] != ' ' && input[delimeter] != '\t'; --delimeter);
 
-    if(delimeter != index)
+    if(delimeter != index - 1 && delimeter > 0)
         input[delimeter] = '\n';
 
     newline(input, nextStop, length);
