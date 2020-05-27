@@ -1,79 +1,66 @@
 #include <stdbool.h>
+#include <stdio.h>
 #include "stack.h"
 #include "syntax-analyzer.h"
 
 
-uint8_t processLine(char line[], bool comment, Stack* stack);
-uint32_t linesize(char line[]);
+bool processLine(char line[], bool isComment, Stack* stack);
+uint32_t lineSize(char line[]);
 
+bool isOpeningBracket(char bracket);
+bool isClosingBracket(char bracket);
+char correspondingOpenBracket(char closingBracket);
 
 void processText(char text[][MAXLINE], uint32_t rowsCount)
 {
     Stack stack = stackInit(MAXLINE * MAXROWS);
 
-    bool comment = false;
+    bool isComment = false;
 
     for(uint32_t i = 0; i < rowsCount; i++)
-        comment = processLine(text[i], comment, &stack);
+        isComment = processLine(text[i], isComment, &stack);
 
-    if(comment || stackCount(stack) > 0){
+    if(isComment || stackCount(stack) > 0){
         printf("\nERROR");
     }
 }
 
-uint8_t processLine(char line[], bool comment, Stack* stack)
+bool processLine(char line[], bool isComment, Stack* stack)
 {
     bool quotes = false;
-    uint32_t length = linesize(line);
+    uint32_t length = lineSize(line);
 
     for(uint32_t i = 0; i < length; ++i)
     {
-        if(comment && i < length - 1 && line[i] == '*' && line[i + 1] == '/')
+        if(isComment && i < length - 1 && line[i] == '*' && line[i + 1] == '/')
         {
-            comment = false;
+            isComment = false;
             ++i;
         }
-        else if(!comment && !quotes && i < length - 1 && line[i] == '/' && line[i + 1] == '/')
+        else if(!isComment && !quotes)
         {
-            return false;
+            if(line[i] == '"')
+                quotes = true;
+
+            else if(i < length - 1 && line[i] == '/' && line[i + 1] == '/')
+                return false;
+
+            else if(isOpeningBracket(line[i]))
+                stackPush(stack, line[i]);
+
+            else if(isClosingBracket(line[i]))
+            {
+                if(stackCount(*stack) == 0 || stackPop(stack) != correspondingOpenBracket(line[i]))
+                {
+                    printf("\nERROR: inconsistent brackets");
+                    return -1;
+                }
+            }
         }
-        else if(!comment && !quotes && line[i] == '"')
-        {
-            quotes = true;
-        }
-        else if(!comment && quotes && line[i-1] != '\\' && line[i] == '"')
+        else if(!isComment && quotes && line[i-1] != '\\' && line[i] == '"')
         {
             quotes = false;
         }
-        else if(!comment && !quotes && (line[i] == '(' || line[i] == '[' || line[i] == '{'))
-        {
-            stackPush(stack, line[i]);
-        }
-        else if(!comment && !quotes && line[i] == ')')
-        {
-            if(stackCount(*stack) == 0 || stackPop(stack) != '(')
-            {
-                printf("\nERROR: inconsistent brackets");
-                return -1;
-            }
-        }
-        else if(!comment && !quotes && line[i] == ']')
-        {
-               if(stackCount(*stack) == 0 || stackPop(stack) != '[')
-            {
-                printf("\nERROR: inconsistent brackets");
-                return -1;
-            }
-        }
-        else if(!comment && !quotes && line[i] == '}')
-        {
-            if(stackCount(*stack) == 0 || stackPop(stack) != '{')
-            {
-                printf("\nERROR: inconsistent brackets");
-                return -1;
-            }
-        }
-
     }
 
     if(quotes)
@@ -82,13 +69,38 @@ uint8_t processLine(char line[], bool comment, Stack* stack)
         return -1;
     }
 
-    return comment;
+    return isComment;
 }
 
-uint32_t linesize(char line[])
+uint32_t lineSize(char line[])
 {
     uint32_t length;
     for(length = 0; line[length] != '\0'; ++length);
 
     return length;
+}
+
+bool isOpeningBracket(char bracket)
+{
+    return bracket == '(' || bracket == '[' || bracket == '{';
+}
+
+bool isClosingBracket(char bracket)
+{
+    return bracket == ')' || bracket == ']' || bracket == '}';
+}
+
+char correspondingOpenBracket(char closingBracket)
+{
+   switch (closingBracket)
+   {
+        case ')':
+            return '(';
+        case ']':
+            return '[';
+        case '}':
+            return '{';
+        default:
+            return ' ';
+   }
 }
