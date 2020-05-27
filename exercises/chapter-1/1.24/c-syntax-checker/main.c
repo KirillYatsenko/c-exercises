@@ -4,42 +4,30 @@
 #include "stack.h"
 
 #define MAXLINE 1000
-
-
-/*
-    Note:
-        I know this code can be improved by using structures, enums
-        But I was trying to use only information covered by the first chapter
-
-*/
-
+#define MAXROWS 500
 
 int getLine(char line[], uint32_t maxline);
+void processText(char text[][MAXLINE], uint32_t size);
 
 // return value is the status
-uint8_t process(char line[], uint32_t length, bool comment, uint32_t stackSize, uint8_t* stackBase, uint8_t* stackHead);
-
+uint8_t processLine(char line[], bool comment, Stack* stack);
+uint32_t linesize(char line[]);
 
 int main()
 {
+    char text[MAXROWS][MAXLINE];
     char line[MAXLINE];
     uint32_t length;
-    bool comment = false;
+    uint32_t rows;
 
-    uint8_t* stackBase;
-    uint8_t* stackHead;
-    stackInit(MAXLINE, &stackBase, &stackHead);
+    for (rows = 0; rows < MAXROWS && (length = getLine(line, MAXLINE)) > 0; ++rows)
+        strncpy(text[rows], line, length);
 
-    while((length = getLine(line, MAXLINE)) > 0){
-        comment = process(line, length, comment, MAXLINE, stackBase, stackHead);
-    }
-
-    if(comment || stackCount(stackBase, stackHead) > 0){
-        printf("\nERROR");
-    }
+    processText(text, rows);
 
     return 0;
 }
+
 
 int getLine(char line[], uint32_t maxline){
     int c, i;
@@ -50,9 +38,26 @@ int getLine(char line[], uint32_t maxline){
     return i;
 }
 
-uint8_t process(char line[], uint32_t length, bool comment, uint32_t stackSize, uint8_t* stackBase, uint8_t* stackHead)
+void processText(char text[][MAXLINE], uint32_t size)
+{
+
+    Stack stack = stackInit(MAXLINE * MAXROWS);
+
+    bool comment = false;
+
+    for(uint32_t i = 0; i < size; i++)
+        comment = processLine(text[i], comment, &stack);
+
+ //   printf("%d", stackCount(stackBase, stackHead));
+    if(comment || stackCount(stack) > 0){
+        printf("\nERROR");
+    }
+}
+
+uint8_t processLine(char line[], bool comment, Stack* stack)
 {
     bool quotes = false;
+    uint32_t length = linesize(line);
 
     for(uint32_t i = 0; i < length; ++i)
     {
@@ -75,11 +80,11 @@ uint8_t process(char line[], uint32_t length, bool comment, uint32_t stackSize, 
         }
         else if(!comment && !quotes && (line[i] == '(' || line[i] == '[' || line[i] == '{'))
         {
-            stackPush(stackBase, &stackHead, line[i], stackSize);
+            stackPush(stack, line[i]);
         }
         else if(!comment && !quotes && line[i] == ')')
         {
-            if(stackCount(stackBase, stackHead) == 0 || stackPop(stackBase, &stackHead) != '(')
+            if(stackCount(*stack) == 0 || stackPop(stack) != '(')
             {
                 printf("\nERROR: inconsistent brackets");
                 return -1;
@@ -87,7 +92,7 @@ uint8_t process(char line[], uint32_t length, bool comment, uint32_t stackSize, 
         }
         else if(!comment && !quotes && line[i] == ']')
         {
-            if(stackCount(stackBase, stackHead) == 0 || stackPop(stackBase, &stackHead) != '[')
+               if(stackCount(*stack) == 0 || stackPop(stack) != '[')
             {
                 printf("\nERROR: inconsistent brackets");
                 return -1;
@@ -95,7 +100,7 @@ uint8_t process(char line[], uint32_t length, bool comment, uint32_t stackSize, 
         }
         else if(!comment && !quotes && line[i] == '}')
         {
-            if(stackCount(stackBase, stackHead) == 0 || stackPop(stackBase, &stackHead) != '{')
+            if(stackCount(*stack) == 0 || stackPop(stack) != '{')
             {
                 printf("\nERROR: inconsistent brackets");
                 return -1;
@@ -111,4 +116,12 @@ uint8_t process(char line[], uint32_t length, bool comment, uint32_t stackSize, 
     }
 
     return comment;
+}
+
+uint32_t linesize(char line[])
+{
+    uint32_t length;
+    for(length = 0; line[length] != '\0'; ++length);
+
+    return length;
 }

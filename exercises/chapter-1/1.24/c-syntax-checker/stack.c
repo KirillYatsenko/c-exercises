@@ -1,41 +1,43 @@
 #include "stack.h"
 
-void stackInit(uint32_t total, uint8_t** base, uint8_t** head)
+Stack stackInit(uint32_t size)
 {
-    *base = (uint8_t*)malloc(total);
-    *head = *base;
+    Stack newStack;
+
+    newStack.size = size;
+    newStack.base = (uint8_t*)malloc(size);
+    newStack.head = newStack.base;
+
+    return newStack;
 }
 
-uint32_t stackCount(uint8_t* base, uint8_t* head)
+uint32_t stackCount(Stack stack)
 {
-    return head - base;
+    uint32_t count = stack.head - stack.base;
+    return count;
 }
 
-uint8_t stackPush(uint8_t* base, uint8_t** head, uint8_t element, uint32_t size)
+void stackPush(Stack* stack, uint8_t element)
 {
-    if(stackCount(base, *head) == size)
+    if(stackCount(*stack) == stack->size)
     {
         printf("\nERROR: stack is full");
-        return -1;
     }
 
-    *head = *head + 1;
-    **head = element;
-
-    return 1;
+    stack->head = stack->head + 1;
+    *stack->head = element;
 }
 
-uint8_t stackPop(uint8_t* base, uint8_t** head)
+uint8_t stackPop(Stack* stack)
 {
-    if(stackCount(base, *head) == 0)
+    if(stackCount(*stack) == 0)
     {
         printf("\nERROR: stack is empty!");
-        return -1;
     }
 
-    uint8_t elem = **head;
-    *head = *head - 1;
+    uint8_t popped = *stack->head;
+    stack->head = stack->head - 1;
 
-    return elem;
+    return popped;
 }
 
