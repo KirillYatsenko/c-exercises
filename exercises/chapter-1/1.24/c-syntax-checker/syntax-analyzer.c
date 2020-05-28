@@ -4,45 +4,66 @@
 #include "syntax-analyzer.h"
 
 
-bool processLine(char line[], bool isComment, Stack* stack);
+bool processLine(char line[], uint32_t rowNumber, bool isComment, Stack* stack, ProcessResult* result);
 uint32_t lineSize(char line[]);
 
 bool isOpeningBracket(char bracket);
 bool isClosingBracket(char bracket);
 char correspondingOpenBracket(char closingBracket);
 
-void processText(char text[][MAXLINE], uint32_t rowsCount)
+ProcessResult processText(char text[][MAXLINE], uint32_t rowsCount)
 {
+    ProcessResult result;
+    result.status = Success;
+
     Stack stack = stackInit(MAXLINE * MAXROWS);
 
     bool isComment = false;
 
-    for(uint32_t i = 0; i < rowsCount; i++)
-        isComment = processLine(text[i], isComment, &stack);
+    uint32_t rowNumber;
+    for(rowNumber = 0; result.status == Success && rowNumber < rowsCount; ++rowNumber)
+        isComment = processLine(text[rowNumber], rowNumber, isComment, &stack, &result);
 
-    if(isComment || stackCount(stack) > 0){
-        printf("\nERROR");
+    if(result.status != Success)
+        return result;
+
+    if(isComment)
+    {
+        result.status = ErrorUnterminatedComment;
+        result.errorRow = rowNumber;
+        result.errorColumn = 0;
     }
+    else if(stackCount(stack) > 0){
+        result.status = ErrorUnclosedBrackets;
+        result.errorRow = rowNumber;
+        result.errorColumn = 0;
+    }
+
+    return result;
 }
 
-bool processLine(char line[], bool isComment, Stack* stack)
+bool processLine(char line[], uint32_t rowNumber, bool isComment, Stack* stack, ProcessResult* result)
 {
     bool quotes = false;
     uint32_t length = lineSize(line);
+    uint32_t i;
 
-    for(uint32_t i = 0; i < length; ++i)
+    for(i = 0; i < length; ++i)
     {
+        // closing multiline comment
         if(isComment && i < length - 1 && line[i] == '*' && line[i + 1] == '/')
         {
             isComment = false;
-            ++i;
         }
-        else if(!isComment && !quotes)
+        else if(!isComment && !quotes) // not ignoring
         {
-            if(line[i] == '"')
+            if(line[i] == '"') // dobule quotes start
                 quotes = true;
 
-            else if(i < length - 1 && line[i] == '/' && line[i + 1] == '/')
+            else if(i < length - 1 && line[i] == '/' && line[i + 1] == '*') // multiline comment
+                isComment = true;
+
+            else if(i < length - 1 && line[i] == '/' && line[i + 1] == '/') // single line comment
                 return false;
 
             else if(isOpeningBracket(line[i]))
@@ -52,11 +73,14 @@ bool processLine(char line[], bool isComment, Stack* stack)
             {
                 if(stackCount(*stack) == 0 || stackPop(stack) != correspondingOpenBracket(line[i]))
                 {
-                    printf("\nERROR: inconsistent brackets");
-                    return -1;
+                    result->status = ErrorInconsistentBracket;
+                    result->errorRow = rowNumber;
+                    result->errorColumn = i;
+                    break;
                 }
             }
         }
+        // closing double quotes
         else if(!isComment && quotes && line[i-1] != '\\' && line[i] == '"')
         {
             quotes = false;
@@ -65,8 +89,9 @@ bool processLine(char line[], bool isComment, Stack* stack)
 
     if(quotes)
     {
-        printf("\nERROR: no closing double quotes");
-        return -1;
+        result->status = ErrorOpenedDoubleQuotes;
+        result->errorRow = rowNumber;
+        result->errorColumn = i;
     }
 
     return isComment;

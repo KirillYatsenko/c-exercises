@@ -8,12 +8,22 @@
 #define MAXLINE 1000
 #define MAXROWS 500
 
+typedef enum
+{
+    Success,
+    ErrorOpenedDoubleQuotes,
+    ErrorUnterminatedComment,
+    ErrorUnclosedBrackets,
+    ErrorInconsistentBracket
+} Status;
+
 typedef struct
 {
-    bool isSuccess;
-    char error[];
+    Status status;
+    uint32_t errorRow;
+    uint32_t errorColumn;
 } ProcessResult;
 
-void processText(char text[][MAXLINE], uint32_t rowsCount);
+ProcessResult processText(char text[][MAXLINE], uint32_t rowsCount);
 
 #endif // SYNTAX-ANALYZER_INCLUDED

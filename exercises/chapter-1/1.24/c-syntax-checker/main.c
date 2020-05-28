@@ -1,13 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "syntax-analyzer.h"
-
+#include "test-syntax-analyzer.h"
 
 int getLine(char line[], uint32_t maxline);
 
 
 int main()
 {
+    testsRun();
+
     char text[MAXROWS][MAXLINE];
     char line[MAXLINE];
     uint32_t lineLength;
