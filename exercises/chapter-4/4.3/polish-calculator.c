@@ -2,14 +2,12 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include "polish-calculator.h"
+#include "stack.h"
 
 #define MAXOP 100
 #define NUMBER '0'
-#define MAXVAL 100
 #define BUFSIZE 100
 
-int sp = 0;
-double val[MAXVAL];
 char buf[BUFSIZE];
 int bufp = 0;
 
@@ -65,24 +63,6 @@ void calculate()
                 printf("error: unknown command %s\n", s);
                 break;
         }
-    }
-}
-
-void push(double f)
-{
-    if (sp < MAXVAL)
-        val[sp++] = f;
-    else
-        printf("error: stack full, can't push %g\n", f);
-}
-
-double pop(void)
-{
-    if (sp > 0)
-        return val[--sp];
-    else {
-        printf("error: stack empty\n");
-        return 0.0;
     }
 }
 
