@@ -11,9 +11,13 @@
 #define SIN '1'
 #define EXP '2'
 #define POW '3'
+#define VAR '20'
 
 char buf[BUFSIZE];
 int bufp = 0;
+
+double variables[25];
+int varp = -1;
 
 int getop (char []);
 int getch(void);
@@ -78,6 +82,14 @@ void calculate()
                 push(power);
 
                 break;
+
+            case '=':
+                op1 = pop();
+                variables[varp] = op1;
+
+                break;
+            case VAR:
+                break;
             case '\n':
                 printf("\t%.8g\n", pop());
                 break;
@@ -101,6 +113,16 @@ int getop(char s[])
         char function[10];
         function[0] = c;
 
+        if(c == '!')
+        {
+            if((c = getch()) < 'a'|| c > 'z')
+                printf("error: after ! sign should be single-symbol variable name");
+
+            int pos = c - 'a';
+            push(variables[c - 'a']);
+            return VAR;
+        }
+
         int j = 1;
         while((c = getch()) >= 'a' && c <= 'z')
             function[j++] = c;
@@ -114,6 +136,11 @@ int getop(char s[])
             return EXP;
         else if (strcmp(function, "pow") == 0)
             return POW;
+        else if (function[0] >= 'a' && function[0] <= 'z')
+        {
+            varp = function[0] - 'a';
+            return VAR;
+        }
         else
             return function[0];
     }
