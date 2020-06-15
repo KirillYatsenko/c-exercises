@@ -1,12 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <math.h>
 #include "polish-calculator.h"
 #include "stack.h"
 
 #define MAXOP 100
 #define NUMBER '0'
 #define BUFSIZE 100
+#define SIN '1'
+#define EXP '2'
+#define POW '3'
 
 char buf[BUFSIZE];
 int bufp = 0;
@@ -54,6 +58,26 @@ void calculate()
                 else
                     printf("error: zero divisor\n");
                 break;
+            case SIN:
+                op1  = pop();
+                double sinus = sin(op1);
+                push(sinus);
+
+                break;
+
+            case EXP:
+                op1 = pop();
+                double exponent = exp(op1);
+                push(exponent);
+
+                break;
+            case POW:
+                op1 = pop();
+                op2 = pop();
+                double power = pow(op2, op1);
+                push(power);
+
+                break;
             case '\n':
                 printf("\t%.8g\n", pop());
                 break;
@@ -71,8 +95,29 @@ int getop(char s[])
 
     s[1] = '\0';
 
+
     if (!isdigit(c) && c!= '.')
-        return c;
+    {
+        char function[10];
+        function[0] = c;
+
+        int j = 1;
+        while((c = getch()) >= 'a' && c <= 'z')
+            function[j++] = c;
+
+        ungetch(c);
+        function[j] = '\0';
+
+        if(strcmp(function, "sin") == 0)
+            return SIN;
+        else if (strcmp(function, "exp") == 0)
+            return EXP;
+        else if (strcmp(function, "pow") == 0)
+            return POW;
+        else
+            return function[0];
+    }
+
 
     i = 0;
     if(s[i] == '-')
