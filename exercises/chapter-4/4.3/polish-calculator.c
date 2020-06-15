@@ -176,3 +176,8 @@ void ungetch(int c)
     else
         buf[bufp++] = c;
 }
+
+void ungets(char s[])
+{
+    for (int i = 0; i < strlen(s); ungetch(s[i++]));
+}
