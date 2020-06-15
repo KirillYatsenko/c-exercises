@@ -4,27 +4,34 @@
 #include <math.h>
 #include "polish-calculator.h"
 #include "stack.h"
+#include "console-reader.h"
 
 #define MAXOP 100
 #define NUMBER '0'
-#define BUFSIZE 100
 #define SIN '1'
 #define EXP '2'
 #define POW '3'
 #define VAR '20'
+#define MAXLINE 1000
 
-char buf[BUFSIZE];
-int bufp = 0;
 
 double variables[25];
 int varp = -1;
 
+char line[MAXLINE];
+int linep = 0;
+int linelength;
+
 int getop (char []);
 int getch(void);
-void ungetch(int c);
+void ungetch(void);
+void ungets(char s[]);
+
 
 void calculate()
 {
+    linelength = readline(line, MAXLINE);
+
     int type;
     double op2, op1;
     char s[MAXOP];
@@ -90,14 +97,13 @@ void calculate()
                 break;
             case VAR:
                 break;
-            case '\n':
-                printf("\t%.8g\n", pop());
-                break;
             default:
                 printf("error: unknown command %s\n", s);
                 break;
         }
     }
+
+    printf("\t%.8g\n", pop());
 }
 
 int getop(char s[])
@@ -106,7 +112,6 @@ int getop(char s[])
     while ((s[0] = c = getch()) == ' ' || c == '\t');
 
     s[1] = '\0';
-
 
     if (!isdigit(c) && c!= '.')
     {
@@ -127,7 +132,9 @@ int getop(char s[])
         while((c = getch()) >= 'a' && c <= 'z')
             function[j++] = c;
 
-        ungetch(c);
+        if(c != EOF)
+           ungetch();
+
         function[j] = '\0';
 
         if(strcmp(function, "sin") == 0)
@@ -159,25 +166,29 @@ int getop(char s[])
     s[i] = '\0';
 
     if (c != EOF)
-        ungetch(c);
+        ungetch();
 
     return NUMBER;
 }
 
 int getch(void)
 {
-    return (bufp > 0) ? buf[--bufp]: getchar();
+    if(linep == linelength)
+        return EOF;
+
+    return line[linep++];
 }
 
-void ungetch(int c)
+void ungetch(void)
 {
-    if (bufp >= BUFSIZE)
-        printf("ungetch: buffer is full\n");
-    else
-        buf[bufp++] = c;
+    if(linep == 0)
+        printf("\n error: index of the line is equal to zero");
+
+    linep--;
 }
 
 void ungets(char s[])
 {
-    for (int i = 0; i < strlen(s); ungetch(s[i++]));
+    for (int i = 0; i < strlen(s); i++)
+        ungetch();
 }
