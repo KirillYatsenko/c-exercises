@@ -2,6 +2,12 @@
 
 void entab(char inputLine[], char outputLine[], int length, int tabscount, char *tabs[])
 {
+    if(tabscount == 0)
+    {
+        printf("error: tabs list can't be empty");
+        return;
+    }
+
     int tabindx = 0;
     int outputLineIndex = 0;
     for(int inputLineIndex = 0; inputLineIndex < length; ++inputLineIndex)

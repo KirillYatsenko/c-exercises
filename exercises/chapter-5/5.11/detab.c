@@ -1,15 +1,29 @@
 #include "detab.h"
 
-void detab(char inputLine[], char outputLine[], int length)
+void detab(char inputLine[], char outputLine[], int length, int tabscount, char *tabs[])
 {
+    if(tabscount == 0)
+    {
+        printf("error: tabs list can't be empty");
+        return;
+    }
+
+    int tabindx = 0;
     int outputLineIndex = 0;
     for(int inputLineIndex = 0; inputLineIndex < length; ++inputLineIndex)
     {
-        int nextTabPosition = (outputLineIndex / TAB_LENGTH + 1)* TAB_LENGTH - outputLineIndex;
-
         if(inputLine[inputLineIndex ] == '\t')
         {
-            for(int z = 0; z < nextTabPosition; ++z, ++outputLineIndex)
+            int nextTabPosition;
+            for(; tabindx < tabscount &&  outputLineIndex > (nextTabPosition = atoi(*(tabs + tabindx))); tabindx++);
+
+            if(nextTabPosition <= outputLineIndex)
+            {
+                printf("\nerror: there is not next tab in the tab list\n");
+                return;
+            }
+
+            for(int z = outputLineIndex; z < nextTabPosition; ++z, ++outputLineIndex)
                 outputLine[outputLineIndex]= ' ';
         }
         else
