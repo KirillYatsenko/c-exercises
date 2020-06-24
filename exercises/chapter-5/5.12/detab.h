@@ -1,8 +1,6 @@
 #ifndef DETAB_H_INCLUDED
 #define DETAB_H_INCLUDED
 
-#define TAB_LENGTH 8
-
-void detab(char inputLine[], char outputLine[], int length, int tabscount, char *tabs[]);
+void detab(char inputLine[], char outputLine[], int length, int startindx, int tablength);
 
 #endif // DETAB_H_INCLUDED

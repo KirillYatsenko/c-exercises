@@ -1,32 +1,16 @@
 #include "entab.h"
 
-void entab(char inputLine[], char outputLine[], int length, int tabscount, char *tabs[])
+void entab(char inputLine[], char outputLine[], int length, int startindx, int tablength)
 {
-    if(tabscount == 0)
-    {
-        printf("error: tabs list can't be empty");
-        return;
-    }
-
-    int tabindx = 0;
     int outputLineIndex = 0;
     for(int inputLineIndex = 0; inputLineIndex < length; ++inputLineIndex)
     {
-        if(inputLine[inputLineIndex] != ' '){
-                outputLine[outputLineIndex] = inputLine[inputLineIndex];
-                ++outputLineIndex;
+        if(inputLine[inputLineIndex] != ' ' || inputLineIndex < startindx ){
+                outputLine[outputLineIndex++] = inputLine[inputLineIndex];
                 continue;
         }
 
-        int nextTabPosition;
-        for(;tabindx < tabscount &&  inputLineIndex >= (nextTabPosition = atoi(*(tabs + tabindx))); tabindx++);
-
-        if(nextTabPosition <= inputLineIndex)
-        {
-            printf("\nerror: there is not next tab in the tab list\n");
-            return;
-        }
-
+        int nextTabPosition = (inputLineIndex / tablength + 1)* tablength;
         int countSpaces = 0;
 
         for(; inputLine[inputLineIndex] == ' ' && inputLineIndex < nextTabPosition;  ++countSpaces ,++inputLineIndex);
