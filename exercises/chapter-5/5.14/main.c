@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define MAXLINES 5000
 #define MAXLEN 1000
@@ -8,20 +9,31 @@ char *lineptr[MAXLINES];
 
 int readlines(char *lineptr[], int nlines);
 void writelines(char *lineptr[], int nlines);
-void qsort(void *lineptr[], int left, int right, int (*comp)(void *, void *));
+void qsort(void *v[], int left, int right, int (*comp)(void *, void *), int (*ord)(int));
 int numcmp(char *, char *);
 int _getline(char line[], int maxLine);
+int asc(int a);
+int desc(int a);
+
 
 main(int argc, char *argv[])
 {
     int nlines;
     int numeric = 0;
-    if (argc > 1 && strcmp(argv[1], "-n") == 0)
-        numeric = 1;
+    int reverse = 0;
+
+    for(int i = 1; i < argc; ++i)
+    {
+        if(strcmp(argv[i], "-n") == 0)
+            numeric = 1;
+        else if(strcmp(argv[i], "-r") == 0)
+            reverse = 1;
+    }
+
     if ((nlines = readlines(lineptr, MAXLINES)) >= 0)
     {
         qsort((void**) lineptr, 0, nlines-1,
-              (int (*)(void*,void*))(numeric ? numcmp : strcmp));
+              (int (*)(void*,void*))(numeric ? numcmp : strcmp), (int (*)(int))(reverse ? desc : asc));
         writelines(lineptr, nlines);
         return 0;
     }
@@ -32,9 +44,18 @@ main(int argc, char *argv[])
     }
 }
 
+int desc(int a)
+{
+    return a > 0;
+}
+
+int asc(int a)
+{
+    return a < 0;
+}
+
 /* qsort: sort v[left]...v[right] into increasing order */
-void qsort(void *v[], int left, int right,
-           int (*comp)(void *, void *))
+void qsort(void *v[], int left, int right, int (*comp)(void *, void *), int (*ord)(int))
 {
     int i, last;
     void swap(void *v[], int, int);
@@ -45,12 +66,13 @@ void qsort(void *v[], int left, int right,
     last = left;
 
     for (i = left+1; i <= right; i++)
-        if ((*comp)(v[i], v[left]) < 0)
+        //if ((*comp)(v[i], v[left]) > 0)
+        if ((*ord)((*comp)(v[i], v[left])))
             swap(v, ++last, i);
 
     swap(v, left, last);
-    qsort(v, left, last-1, comp);
-    qsort(v, last+1, right, comp);
+    qsort(v, left, last-1, comp, ord);
+    qsort(v, last+1, right, comp, ord);
 }
 
 int numcmp(char *s1, char *s2)
@@ -86,7 +108,6 @@ int readlines(char *lineptr[], int maxlines)
             return -1;
         else
         {
-            line[len-1] = '\0'; /* delete newline */
             strcpy(p, line);
             lineptr[nlines++] = p;
         }
