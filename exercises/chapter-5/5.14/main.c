@@ -9,13 +9,14 @@ char *lineptr[MAXLINES];
 
 int readlines(char *lineptr[], int nlines);
 void writelines(char *lineptr[], int nlines);
-void qsort(void *v[], int left, int right, int (*comp)(void *, void *), int (*ord)(int), char* (*consider_case)(char*));
+void qsort(void *v[], int left, int right, int (*comp)(void *, void *), int (*ord)(int), char* (*consider_case)(char*), char* (*consider_symbols)(char *));
 int numcmp(char *, char *);
 int _getline(char line[], int maxLine);
 int asc(int a);
 int desc(int a);
 char* ingore_case(char* a);
-char* case_sensetive(char* a);
+char* specific_symbols(char* a);
+char* none(char* a);
 
 
 main(int argc, char *argv[])
@@ -24,6 +25,7 @@ main(int argc, char *argv[])
     int numeric = 0;
     int reverse = 0;
     int ignorecase = 0;
+    int alphanumeric = 0;
 
     for(int i = 1; i < argc; ++i)
     {
@@ -33,12 +35,15 @@ main(int argc, char *argv[])
             reverse = 1;
         else if(strcmp(argv[i], "-f") == 0)
             ignorecase = 1;
+        else if(strcmp(argv[i], "-d") == 0)
+            alphanumeric = 1;
     }
 
     if ((nlines = readlines(lineptr, MAXLINES)) >= 0)
     {
         qsort((void**) lineptr, 0, nlines-1,
-              (int (*)(void*,void*))(numeric ? numcmp : strcmp), (int (*)(int))(reverse ? desc : asc), (char (*)(char))(ignorecase? ingore_case : case_sensetive) );
+              (int (*)(void*,void*))(numeric ? numcmp : strcmp), (int (*)(int))(reverse ? desc : asc), (char (*)(char))(ignorecase? ingore_case : none), (char (*)(char))(alphanumeric? specific_symbols : none) );
+
         writelines(lineptr, nlines);
         return 0;
     }
@@ -61,22 +66,40 @@ int asc(int a)
 
 char* ingore_case(char* a)
 {
-   char *a_copy = malloc(strlen(a));
-   strcpy(a_copy, a);
+    char *a_copy = malloc(strlen(a));
+    strcpy(a_copy, a);
 
     for(int i = 0; *(a_copy + i); i++)
         *(a_copy + i) = tolower(*(a_copy + i));
 
-   return a_copy;
+    return a_copy;
 }
 
-char* case_sensetive(char* a)
+char* none(char* a)
 {
     return a;
 }
 
+char* specific_symbols(char* a)
+{
+    char *a_copy = malloc(strlen(a));
+    strcpy(a_copy, a);
+
+    int i, j;
+
+    for(i = 0, j = 0; *(a_copy + i); i++)
+        if(isalnum(*(a_copy + i) || *(a_copy + i) == ' '))
+        {
+            *(a_copy + j) = *(a_copy + i);
+            j++;
+        }
+
+    *(a_copy + j) = '\0';
+    return a_copy;
+}
+
 /* qsort: sort v[left]...v[right] into increasing order */
-void qsort(void *v[], int left, int right, int (*comp)(void *, void *), int (*ord)(int), char* (*consider_case)(char*))
+void qsort(void *v[], int left, int right, int (*comp)(void *, void *), int (*ord)(int), char* (*consider_case)(char*), char* (*consider_symbols)(char *))
 {
     int i, last;
     void swap(void *v[], int, int);
@@ -86,18 +109,19 @@ void qsort(void *v[], int left, int right, int (*comp)(void *, void *), int (*or
     swap(v, left, (left + right)/2);
     last = left;
 
-    for (i = left+1; i <= right; i++){
+    for (i = left+1; i <= right; i++)
+    {
 
-        char* a = consider_case(v[i]);
-        char* b = consider_case(v[left]);
+        char* a = consider_case(consider_symbols(v[i]));
+        char* b = consider_case(consider_symbols(v[left]));
 
         if ((*ord)((*comp)(a, b)))
             swap(v, ++last, i);
     }
 
     swap(v, left, last);
-    qsort(v, left, last-1, comp, ord, consider_case);
-    qsort(v, last+1, right, comp, ord, consider_case);
+    qsort(v, left, last-1, comp, ord, consider_case, consider_symbols);
+    qsort(v, last+1, right, comp, ord, consider_case, consider_symbols);
 }
 
 int numcmp(char *s1, char *s2)
