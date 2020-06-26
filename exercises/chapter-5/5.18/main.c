@@ -5,14 +5,18 @@
 #define MAXTOKEN 100
 #define BUFSIZE 100
 
+int validatetype(char *type);
 int gettoken(void);
 void dcl(void);
 void dirdcl(void);
 
-enum { NAME, PARENS, BRACKETS };
-void dcl(void);
-void dirdcl(void);
-int gettoken(void);
+enum
+{
+    NAME,
+    PARENS,
+    BRACKETS,
+};
+
 int tokentype;
 char token[MAXTOKEN];
 char name[MAXTOKEN];
@@ -21,20 +25,36 @@ char out[1000];
 char buf[BUFSIZE];
 int bufp = 0;
 
+int iserror = 0;
+char *supportedtypes[] = {"int", "char", "double"};
 
-main()
+int main()
 {
-    while (gettoken() != EOF)
+    if (gettoken() != EOF)
     {
+        if (!validatetype(token))
+        {
+            printf("error: '%s' type is not recognized\n", token);
+            return -1;
+        }
+
         /* 1st token on line */
         strcpy(datatype, token); /* is the datatype */
         out[0] = '\0';
         dcl();
-        /* parse rest of line */
-        if (tokentype != '\n')
-            printf("syntax error\n");
-        printf("%s: %s %s\n", name, out, datatype);
+
+        if (!iserror)
+            printf("%s: %s %s\n", name, out, datatype);
     }
+    return 0;
+}
+
+int validatetype(char *type)
+{
+    for (int i = 0; *(supportedtypes + i); i++)
+        if (strcmp(*(supportedtypes + i), type) == 0)
+            return 1;
+
     return 0;
 }
 
@@ -60,17 +80,27 @@ int gettoken(void) /* return next token */
     }
     else if (c == '[')
     {
-        for (*p++ = c; (*p++ = getch()) != ']'; )
+        for (*p++ = c; (*p++ = getch()) != ']';)
             ;
         *p = '\0';
+
+        for (int i = 1; i < strlen(token) - 1; i++)
+            if (!isdigit(*(token + i)))
+            {
+                printf("\nerror: '%s' - value inside the '[]' should be an integer\n", token);
+                iserror = 1;
+            }
+
         return tokentype = BRACKETS;
     }
     else if (isalpha(c))
     {
-        for (*p++ = c; isalnum(c = getch()); )
+        for (*p++ = c; isalnum(c = getch());)
             *p++ = c;
         *p = '\0';
         ungetch(c);
+
+        int iserror = 0;
         return tokentype = NAME;
     }
     else
@@ -80,7 +110,7 @@ int gettoken(void) /* return next token */
 void dcl(void)
 {
     int ns;
-    for (ns = 0; gettoken() == '*'; ) /* count *'s */
+    for (ns = 0; gettoken() == '*';) /* count *'s */
         ns++;
     dirdcl();
     while (ns-- > 0)
@@ -97,12 +127,11 @@ void dirdcl(void)
         if (tokentype != ')')
             printf("error: missing )\n");
     }
-    else if (tokentype == NAME)   /* variable name */
+    else if (tokentype == NAME) /* variable name */
         strcpy(name, token);
     else
         printf("error: expected name or (dcl)\n");
-    while ((type=gettoken()) == PARENS || type == BRACKETS)
-
+    while ((type = gettoken()) == PARENS || type == BRACKETS)
         if (type == PARENS)
             strcat(out, " function returning");
         else
@@ -125,4 +154,3 @@ void ungetch(int c)
     else
         buf[bufp++] = c;
 }
-
