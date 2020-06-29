@@ -9,6 +9,9 @@ int validatetype(char *type);
 int gettoken(void);
 void dcl(void);
 void dirdcl(void);
+void getarguments(void);
+int getch(void);
+void ungetch(int c);
 
 enum
 {
@@ -26,7 +29,9 @@ char buf[BUFSIZE];
 int bufp = 0;
 
 int iserror = 0;
-char *supportedtypes[] = {"int", "char", "double"};
+char *supportedtypes[] = {"int", "char", "double", "void"};
+
+char arguments[1000];
 
 int main()
 {
@@ -67,14 +72,14 @@ int gettoken(void) /* return next token */
         ;
     if (c == '(')
     {
-        if ((c = getch()) == ')')
+        getarguments();
+        if(strlen(arguments) > 0)
         {
             strcpy(token, "()");
             return tokentype = PARENS;
         }
         else
         {
-            ungetch(c);
             return tokentype = '(';
         }
     }
@@ -107,6 +112,46 @@ int gettoken(void) /* return next token */
         return tokentype = c;
 }
 
+void getarguments(void)
+{
+    strcpy(arguments, "");
+
+    int c = getch();
+    int i = 0;
+
+    if (c == ')')
+    {
+        ungetch(c);
+        strcpy(arguments, "void");
+        return;
+    }
+
+    arguments[i++] = c;
+    c = getch();
+    for (; c >= 'a' && c <= 'z'; i++)
+    {
+        arguments[i] = c;
+        c = getch();
+    }
+
+    if (!validatetype(arguments))
+    {
+        while (i)
+            ungetch(arguments[--i]);
+
+        strcpy(arguments, "");
+        return;
+    }
+
+    while (c != ')')
+    {
+        arguments[i++] = c;
+        c = getch();
+    }
+
+    ungetch(c);
+}
+
 void dcl(void)
 {
     int ns;
@@ -133,7 +178,11 @@ void dirdcl(void)
         printf("error: expected name or (dcl)\n");
     while ((type = gettoken()) == PARENS || type == BRACKETS)
         if (type == PARENS)
-            strcat(out, " function returning");
+        {
+            char formals[1000] = " function accepting: %s and returing";
+            sprintf(formals, " function accepting %s and returing", arguments);
+            strcat(out, formals);
+        }
         else
         {
             strcat(out, " array");
