@@ -9,9 +9,6 @@ int validatetype(char *type);
 int gettoken(void);
 void dcl(void);
 void dirdcl(void);
-void getarguments(void);
-int getch(void);
-void ungetch(int c);
 
 enum
 {
@@ -29,9 +26,7 @@ char buf[BUFSIZE];
 int bufp = 0;
 
 int iserror = 0;
-char *supportedtypes[] = {"int", "char", "double", "void"};
-
-char arguments[1000];
+char *supportedtypes[] = {"int", "char", "double"};
 
 int main()
 {
@@ -63,47 +58,6 @@ int validatetype(char *type)
     return 0;
 }
 
-
-void dcl(void)
-{
-    int ns;
-    for (ns = 0; gettoken() == '*';) /* count *'s */
-        ns++;
-    dirdcl();
-    while (ns-- > 0)
-        strcat(out, " pointer to");
-}
-
-void dirdcl(void)
-{
-    int type;
-    if (tokentype == '(')
-    {
-        /* ( dcl ) */
-        dcl();
-        if (tokentype != ')')
-            printf("error: missing )\n");
-    }
-    else if (tokentype == NAME) /* variable name */
-        strcpy(name, token);
-    else
-        printf("error: expected name or (dcl)\n");
-    while ((type = gettoken()) == PARENS || type == BRACKETS)
-        if (type == PARENS)
-        {
-            char formals[1000] = " function accepting: %s and returing";
-            sprintf(formals, " function accepting %s and returing", arguments);
-            strcat(out, formals);
-        }
-        else
-        {
-            strcat(out, " array");
-            strcat(out, token);
-            strcat(out, " of");
-        }
-}
-
-
 int gettoken(void) /* return next token */
 {
     int c, getch(void);
@@ -113,14 +67,14 @@ int gettoken(void) /* return next token */
         ;
     if (c == '(')
     {
-        getarguments();
-        if (strlen(arguments) > 0)
+        if ((c = getch()) == ')')
         {
             strcpy(token, "()");
             return tokentype = PARENS;
         }
         else
         {
+            ungetch(c);
             return tokentype = '(';
         }
     }
@@ -153,44 +107,39 @@ int gettoken(void) /* return next token */
         return tokentype = c;
 }
 
-void getarguments(void)
+void dcl(void)
 {
-    strcpy(arguments, "");
+    int ns;
+    for (ns = 0; gettoken() == '*';) /* count *'s */
+        ns++;
+    dirdcl();
+    while (ns-- > 0)
+        strcat(out, " pointer to");
+}
 
-    int c = getch();
-    int i = 0;
-
-    if (c == ')')
+void dirdcl(void)
+{
+    int type;
+    if (tokentype == '(')
     {
-        ungetch(c);
-        strcpy(arguments, "void");
-        return;
+        /* ( dcl ) */
+        dcl();
+        if (tokentype != ')')
+            printf("error: missing )\n");
     }
-
-    arguments[i++] = c;
-    c = getch();
-    for (; c >= 'a' && c <= 'z'; i++)
-    {
-        arguments[i] = c;
-        c = getch();
-    }
-
-    if (!validatetype(arguments))
-    {
-        while (i)
-            ungetch(arguments[--i]);
-
-        strcpy(arguments, "");
-        return;
-    }
-
-    while (c != ')')
-    {
-        arguments[i++] = c;
-        c = getch();
-    }
-
-    ungetch(c);
+    else if (tokentype == NAME) /* variable name */
+        strcpy(name, token);
+    else
+        printf("error: expected name or (dcl)\n");
+    while ((type = gettoken()) == PARENS || type == BRACKETS)
+        if (type == PARENS)
+            strcat(out, " function returning");
+        else
+        {
+            strcat(out, " array");
+            strcat(out, token);
+            strcat(out, " of");
+        }
 }
 
 int getch(void)
