@@ -63,6 +63,47 @@ int validatetype(char *type)
     return 0;
 }
 
+
+void dcl(void)
+{
+    int ns;
+    for (ns = 0; gettoken() == '*';) /* count *'s */
+        ns++;
+    dirdcl();
+    while (ns-- > 0)
+        strcat(out, " pointer to");
+}
+
+void dirdcl(void)
+{
+    int type;
+    if (tokentype == '(')
+    {
+        /* ( dcl ) */
+        dcl();
+        if (tokentype != ')')
+            printf("error: missing )\n");
+    }
+    else if (tokentype == NAME) /* variable name */
+        strcpy(name, token);
+    else
+        printf("error: expected name or (dcl)\n");
+    while ((type = gettoken()) == PARENS || type == BRACKETS)
+        if (type == PARENS)
+        {
+            char formals[1000] = " function accepting: %s and returing";
+            sprintf(formals, " function accepting %s and returing", arguments);
+            strcat(out, formals);
+        }
+        else
+        {
+            strcat(out, " array");
+            strcat(out, token);
+            strcat(out, " of");
+        }
+}
+
+
 int gettoken(void) /* return next token */
 {
     int c, getch(void);
@@ -73,7 +114,7 @@ int gettoken(void) /* return next token */
     if (c == '(')
     {
         getarguments();
-        if(strlen(arguments) > 0)
+        if (strlen(arguments) > 0)
         {
             strcpy(token, "()");
             return tokentype = PARENS;
@@ -150,45 +191,6 @@ void getarguments(void)
     }
 
     ungetch(c);
-}
-
-void dcl(void)
-{
-    int ns;
-    for (ns = 0; gettoken() == '*';) /* count *'s */
-        ns++;
-    dirdcl();
-    while (ns-- > 0)
-        strcat(out, " pointer to");
-}
-
-void dirdcl(void)
-{
-    int type;
-    if (tokentype == '(')
-    {
-        /* ( dcl ) */
-        dcl();
-        if (tokentype != ')')
-            printf("error: missing )\n");
-    }
-    else if (tokentype == NAME) /* variable name */
-        strcpy(name, token);
-    else
-        printf("error: expected name or (dcl)\n");
-    while ((type = gettoken()) == PARENS || type == BRACKETS)
-        if (type == PARENS)
-        {
-            char formals[1000] = " function accepting: %s and returing";
-            sprintf(formals, " function accepting %s and returing", arguments);
-            strcat(out, formals);
-        }
-        else
-        {
-            strcat(out, " array");
-            strcat(out, token);
-            strcat(out, " of");
-        }
 }
 
 int getch(void)
