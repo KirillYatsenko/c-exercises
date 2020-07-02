@@ -13,6 +13,7 @@ int getch(void);
 void ungetch(void);
 void ungetstring(char *str);
 int checkforfunction(char *arguments);
+void strim(char* str);
 
 enum
 {
@@ -26,7 +27,7 @@ enum
 int tokentype;
 char token[MAXTOKEN];
 char name[MAXTOKEN];
-char datatype[MAXTOKEN];
+char datatype[MAXTOKEN] = "";
 char out[1000];
 
 char *line;
@@ -34,8 +35,10 @@ int linep = 0;
 
 int iserror = 0;
 
-char *supportedtypes[] = {"int", "char", "double", "void", "static", "const"};
-int typesLength = 6;
+char *supportedtypes[] = {"int", "char", "double", "void",
+                          "static int", "static char", "static double",
+                          "const int", "const char", "const double"};
+int typesLength = 10;
 
 void dcl(char *linearg, char *res)
 {
@@ -144,12 +147,14 @@ int gettoken(void) /* return next token */
     }
     else if (isalpha(c))
     {
-        for (*p++ = c; isalnum(c = getch());)
+        for (*p++ = c; isalnum(c = getch()) || c == ' ';)
             *p++ = c;
         *p = '\0';
         ungetch();
 
         int iserror = 0;
+
+        strim(token);
         return tokentype = NAME;
     }
     else
@@ -164,7 +169,7 @@ int checkforfunction(char *arguments)
         return NO_ARGUMENTS;
 
     arguments[0] = c;
-    for (i = 1; (c = getch()) >= 'a' && c <= 'z'; i++)
+    for (i = 1; (((c = getch()) >= 'a' && c <= 'z') || c == ' ') && c != ','; i++)
         arguments[i] = c;
 
     arguments[i] = '\0';
@@ -213,4 +218,11 @@ void ungetstring(char *str)
     int len = strlen(str);
     for (int i = 0; i < len; i++)
         ungetch();
+}
+
+void strim(char* str)
+{
+    int length = strlen(str);
+    for(int i = length - 1; *(str + i) == ' '; --i)
+        *(str + i) = '\0';
 }

@@ -13,8 +13,9 @@ int test_6_frombook();
 int test_7_frombook();
 int dcl_pass_function_arguments_types_1();
 int dcl_pass_function_arguments_types_2();
-int dcl_pass_function_arguments_types_static_1();
-int dcl_pass_function_arguments_types_const_1();
+int dcl_pass_function_arguments_types_static();
+int dcl_pass_function_arguments_types_const();
+int dcl_pass_function_arguments_types_const_and_returing_static_char();
 
 void runtests(void)
 {
@@ -27,8 +28,9 @@ void runtests(void)
     _run("From book test #7", test_7_frombook);
     _run("Pass arguments types to function #1", dcl_pass_function_arguments_types_1);
     _run("Pass arguments types to function #2", dcl_pass_function_arguments_types_2);
-    _run("Pass arguments types with static to function #1", dcl_pass_function_arguments_types_static_1);
-    _run("Pass arguments types with const to function #1", dcl_pass_function_arguments_types_const_1);
+    _run("Pass arguments types with static to function", dcl_pass_function_arguments_types_static);
+    _run("Pass arguments types with const to function", dcl_pass_function_arguments_types_const);
+    _run("Pass arguments types with const to function and return static char", dcl_pass_function_arguments_types_const_and_returing_static_char);
 
     printf("\n");
 }
@@ -111,7 +113,7 @@ int dcl_pass_function_arguments_types_2()
     return strcmp(res, "detab:  pointer to function accepting int, char and returning char\n") == 0;
 }
 
-int dcl_pass_function_arguments_types_static_1()
+int dcl_pass_function_arguments_types_static()
 {
     char res[1000];
     dcl("char (*detab)(static int, char)", res);
@@ -119,10 +121,18 @@ int dcl_pass_function_arguments_types_static_1()
     return strcmp(res, "detab:  pointer to function accepting static int, char and returning char\n") == 0;
 }
 
-int dcl_pass_function_arguments_types_const_1()
+int dcl_pass_function_arguments_types_const()
 {
     char res[1000];
     dcl("char (*detab)(const int, char)", res);
 
     return strcmp(res, "detab:  pointer to function accepting const int, char and returning char\n") == 0;
+}
+
+int dcl_pass_function_arguments_types_const_and_returing_static_char()
+{
+    char res[1000];
+    dcl("static char (*detab)(const int, char)", res);
+
+    return strcmp(res, "detab:  pointer to function accepting const int, char and returning static char\n") == 0;
 }
