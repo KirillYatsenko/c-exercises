@@ -9,12 +9,18 @@ int validatetype(char *type);
 int gettoken(void);
 void _dcl(void);
 void dirdcl(void);
+int getch(void);
+void ungetch(void);
+void ungetstring(char *str);
+int checkforfunction(char *arguments);
 
 enum
 {
     NAME,
-    PARENS,
     BRACKETS,
+    NOT_A_FUNCTION,
+    NO_ARGUMENTS,
+    HAS_ARGUMENTS
 };
 
 int tokentype;
@@ -23,11 +29,13 @@ char name[MAXTOKEN];
 char datatype[MAXTOKEN];
 char out[1000];
 
-char* line;
+char *line;
 int linep = 0;
 
 int iserror = 0;
+
 char *supportedtypes[] = {"int", "char", "double", "void"};
+int typesLength = 4;
 
 void dcl(char *linearg, char *res)
 {
@@ -52,13 +60,45 @@ void dcl(char *linearg, char *res)
         sprintf(res, "%s: %s %s\n", name, out, datatype);
 }
 
-int validatetype(char *type)
+void _dcl(void)
 {
-    for (int i = 0; *(supportedtypes + i); i++)
-        if (strcmp(*(supportedtypes + i), type) == 0)
-            return 1;
+    int ns;
+    for (ns = 0; gettoken() == '*';) /* count *'s */
+        ns++;
+    dirdcl();
+    while (ns-- > 0)
+        strcat(out, " pointer to");
+}
 
-    return 0;
+void dirdcl(void)
+{
+    int type;
+    if (tokentype == '(')
+    {
+        /* ( dcl ) */
+        _dcl();
+        if (tokentype != ')')
+            printf("error: missing )\n");
+    }
+    else if (tokentype == NAME) /* variable name */
+        strcpy(name, token);
+    else
+        printf("error: expected name or (dcl)\n");
+    while ((type = gettoken()) == NO_ARGUMENTS || type == HAS_ARGUMENTS || type == BRACKETS)
+        if (type == NO_ARGUMENTS)
+            strcat(out, " function returning");
+        else if (type == HAS_ARGUMENTS)
+        {
+            char temp[1000];
+            sprintf(temp, " function accepting %s and returning", token);
+            strcat(out, temp);
+        }
+        else
+        {
+            strcat(out, " array");
+            strcat(out, token);
+            strcat(out, " of");
+        }
 }
 
 int gettoken(void) /* return next token */
@@ -70,16 +110,22 @@ int gettoken(void) /* return next token */
         ;
     if (c == '(')
     {
-        if ((c = getch()) == ')')
+        char arguments[1000];
+        int isfunction = checkforfunction(arguments);
+
+        if (isfunction == NO_ARGUMENTS)
         {
+            // ungetch();
             strcpy(token, "()");
-            return tokentype = PARENS;
+            return tokentype = isfunction;
+        }
+        else if (isfunction == HAS_ARGUMENTS)
+        {
+            strcpy(token, arguments);
+            return tokentype = isfunction;
         }
         else
-        {
-            ungetch();
             return tokentype = '(';
-        }
     }
     else if (c == '[')
     {
@@ -110,53 +156,60 @@ int gettoken(void) /* return next token */
         return tokentype = c;
 }
 
-void _dcl(void)
+int checkforfunction(char *arguments)
 {
-    int ns;
-    for (ns = 0; gettoken() == '*';) /* count *'s */
-        ns++;
-    dirdcl();
-    while (ns-- > 0)
-        strcat(out, " pointer to");
+    int i, c;
+
+    if ((c = getch()) == ')')
+        return NO_ARGUMENTS;
+
+    arguments[0] = c;
+    for (i = 1; (c = getch()) >= 'a' && c <= 'z'; i++)
+        arguments[i] = c;
+
+    arguments[i] = '\0';
+
+    ungetch();
+    if (!validatetype(arguments))
+    {
+        ungetstring(arguments);
+        return NOT_A_FUNCTION;
+    }
+
+    for (; (c = getch()) != ')' && c != EOF; i++)
+        arguments[i] = c;
+
+    return HAS_ARGUMENTS;
 }
 
-void dirdcl(void)
+int validatetype(char *type)
 {
-    int type;
-    if (tokentype == '(')
-    {
-        /* ( dcl ) */
-        _dcl();
-        if (tokentype != ')')
-            printf("error: missing )\n");
-    }
-    else if (tokentype == NAME) /* variable name */
-        strcpy(name, token);
-    else
-        printf("error: expected name or (dcl)\n");
-    while ((type = gettoken()) == PARENS || type == BRACKETS)
-        if (type == PARENS)
-            strcat(out, " function returning");
-        else
-        {
-            strcat(out, " array");
-            strcat(out, token);
-            strcat(out, " of");
-        }
+    for (int i = 0; i < typesLength; i++)
+        if (strcmp(*(supportedtypes + i), type) == 0)
+            return 1;
+
+    return 0;
 }
 
 int getch(void)
 {
-    if(linep == strlen(line))
+    if (linep == strlen(line))
         return EOF;
-    
+
     return line[linep++];
 }
 
 void ungetch()
 {
-    if(linep == 0)
+    if (linep == 0)
         printf("\nerror: can't ungetch");
 
     linep--;
+}
+
+void ungetstring(char *str)
+{
+    int len = strlen(str);
+    for (int i = 0; i < len; i++)
+        ungetch();
 }
