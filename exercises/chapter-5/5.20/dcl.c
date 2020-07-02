@@ -34,8 +34,8 @@ int linep = 0;
 
 int iserror = 0;
 
-char *supportedtypes[] = {"int", "char", "double", "void"};
-int typesLength = 4;
+char *supportedtypes[] = {"int", "char", "double", "void", "static", "const"};
+int typesLength = 6;
 
 void dcl(char *linearg, char *res)
 {
@@ -179,6 +179,7 @@ int checkforfunction(char *arguments)
     for (; (c = getch()) != ')' && c != EOF; i++)
         arguments[i] = c;
 
+    arguments[i] = '\0';
     return HAS_ARGUMENTS;
 }
 
