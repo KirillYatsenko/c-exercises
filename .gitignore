@@ -57,3 +57,4 @@ dkms.conf
 *.cbp
 **/bin
 *.json
+out
