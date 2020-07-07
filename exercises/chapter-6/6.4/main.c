@@ -146,7 +146,7 @@ void ungetch(int c)
 
 int countcmp(char *a, char *b, int counta, int countb)
 {
-    int res = counta - countb;
+    int res = countb - counta;
     
     if (res == 0)
         return -1;
