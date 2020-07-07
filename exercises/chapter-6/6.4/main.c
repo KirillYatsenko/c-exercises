@@ -14,11 +14,14 @@ struct tnode
     struct tnode *right;
 };
 
-struct tnode *addtree(struct tnode *, char *);
+struct tnode *addtree(struct tnode *p, int count, char *w, int (*cmp)(char *, char *, int, int));
 void treeprint(struct tnode *);
 int getword(char *, int);
 struct tnode *talloc(void);
 char *_strdup(char *);
+struct tnode *sort(struct tnode *newroot, struct tnode *oldroot);
+int _strcmp(char *a, char *b, int counta, int countb);
+int countcmp(char *a, char *b, int counta, int countb);
 
 char buf[BUFSIZE];
 int bufp = 0;
@@ -30,12 +33,18 @@ int main()
     root = NULL;
     while (getword(word, MAXWORD) != EOF)
         if (isalpha(word[0]))
-            root = addtree(root, word);
-    treeprint(root);
+            root = addtree(root, 1, word, _strcmp);
+
+    struct tnode *sortedRoot;  
+    sortedRoot = NULL;
+
+    sortedRoot = sort(sortedRoot, root);
+    treeprint(sortedRoot);
+
     return 0;
 }
 
-struct tnode *addtree(struct tnode *p, char *w)
+struct tnode *addtree(struct tnode *p, int count, char *w, int (*cmp)(char *, char *, int, int))
 {
     int cond;
     if (p == NULL)
@@ -44,19 +53,31 @@ struct tnode *addtree(struct tnode *p, char *w)
         p = talloc();
         /* make a new node */
         p->word = _strdup(w);
-        p->count = 1;
+        p->count = count;
         p->left = p->right = NULL;
     }
-    else if ((cond = strcmp(w, p->word)) == 0)
+    else if ((cond = cmp(w, p->word, count, p->count)) == 0)
         p->count++;
     /* repeated word */
     else if (cond < 0)
         /* less than into left subtree */
-        p->left = addtree(p->left, w);
+        p->left = addtree(p->left, count, w, cmp);
     else
         /* greater than into right subtree */
-        p->right = addtree(p->right, w);
+        p->right = addtree(p->right, count, w, cmp);
     return p;
+}
+
+struct tnode *sort(struct tnode *newroot, struct tnode *oldroot)
+{
+    if (oldroot == NULL)
+        return newroot;
+
+    newroot = addtree(newroot, oldroot->count, oldroot->word, countcmp);
+    sort(newroot, oldroot->left);
+    sort(newroot, oldroot->right);
+
+    return newroot;
 }
 
 /* treeprint: in-order print of tree p */
@@ -121,4 +142,19 @@ void ungetch(int c)
         printf("ungetch: too many characters\n");
     else
         buf[bufp++] = c;
-} 
+}
+
+int countcmp(char *a, char *b, int counta, int countb)
+{
+    int res = counta - countb;
+    
+    if (res == 0)
+        return -1;
+
+    return res;
+}
+
+int _strcmp(char *a, char *b, int counta, int countb)
+{
+    return strcmp(a, b);
+}
