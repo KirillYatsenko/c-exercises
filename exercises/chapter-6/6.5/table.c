@@ -1,21 +1,21 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include "table.h"
 
-#define HASHSIZE 101
+#define HASHSIZE 1
 
-
+unsigned hash(char *s);
 static struct nlist *hashtab[HASHSIZE];
 
-struct nlist *lookup(char *);
-struct nlist *install(char *name, char *defn);
-unsigned hash(char *s);
-
-
-struct nlist *lookup(char *s)
+struct nlist *lookup(char *s, struct nlist **prev)
 {
     struct nlist *np;
-    for (np = hashtab[hash(s)]; np != NULL; np = np->next)
+
+    int hashed = hash(s);
+    *prev = hashtab[hashed];
+
+    for (np = hashtab[hash(s)], *prev = hashtab[hash(s)]; np != NULL; *prev = np, np = np->next)
         if (strcmp(s, np->name) == 0)
             return np;
     /* found */
@@ -26,9 +26,9 @@ struct nlist *lookup(char *s)
 /* install: put (name, defn) in hashtab */
 struct nlist *install(char *name, char *defn)
 {
-    struct nlist *np;
+    struct nlist *np, *prev;
     unsigned hashval;
-    if ((np = lookup(name)) == NULL)
+    if ((np = lookup(name, &prev)) == NULL)
     { /* not found */
         np = (struct nlist *)malloc(sizeof(*np));
         if (np == NULL || (np->name = strdup(name)) == NULL)
@@ -38,12 +38,25 @@ struct nlist *install(char *name, char *defn)
         hashtab[hashval] = np;
     }
     else
-        /* already there */
-        free((void *)np->defn);
-    /*free previous defn */
+        free((void *)np->defn); /* already there */
+
     if ((np->defn = strdup(defn)) == NULL)
         return NULL;
+
     return np;
+}
+
+void undef(char *name)
+{
+    struct nlist *np, *prev;
+    if ((np = lookup(name, &prev)) == NULL)
+    {
+        printf("\nerror: '%s' cannot be found in the table\n", name);
+        return;
+    }
+
+    prev->next = np->next;
+    free((void*)np);
 }
 
 /* hash: form hash value for string s */

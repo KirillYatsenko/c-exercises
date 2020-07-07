@@ -12,8 +12,8 @@ struct nlist
     /* replacement text */
 };
 
-struct nlist *lookup(char *);
+struct nlist *lookup(char *s, struct nlist **prev);
 struct nlist *install(char *name, char *defn);
-unsigned hash(char *s);
+void undef(char *name);
 
 #endif
