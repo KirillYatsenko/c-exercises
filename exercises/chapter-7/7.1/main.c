@@ -5,7 +5,7 @@
 
 int (*getfunction(char *name))(int);
 
-int main(int argc, char *argv[]) /* lower: convert input to lower case*/
+int main(int argc, char *argv[])
 {
     if(argc == 1)
     {
