@@ -87,13 +87,3 @@ void minprintf(char *fmtarg, ...)
     }
     va_end(ap); /* clean up when done */
 }
-
-void _printfint(char *format, va_list *ap)
-{
-    int ival = va_arg(*ap, int);
-
-    if (!ival)
-        printf("\nerror: mismatched number of args\n");
-    else
-        printf(format, ival);
-}
