@@ -1,18 +1,17 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define MAXLINE 1000
 
-int _getline(char *line, int max);
+int find(FILE *fp, char *filename, char *pattern, int except, int number);
 
 /* find: print lines that match pattern from 1st arg */
 int main(int argc, char *argv[])
 {
-    char line[MAXLINE];
-    long lineno = 0;
     int c, except = 0, number = 0, found = 0;
     while (--argc > 0 && (*++argv)[0] == '-')
-        while (c = *++argv[0])
+        while ((c = *++argv[0]))
             switch (c)
             {
             case 'x':
@@ -23,38 +22,50 @@ int main(int argc, char *argv[])
                 break;
             default:
                 printf("find: illegal option %c\n", c);
-                argc = 0;
-                found = -1;
+                exit(1);
                 break;
             }
-    if (argc != 1)
+
+    if (argc == 0)
         printf("Usage: find -x -n pattern\n");
+    else if (argc == 1)
+        found = find(stdin, "stdin", *argv, except, number);
     else
-        while (_getline(line, MAXLINE) > 0)
+    {
+        FILE *fp;
+        char *pattern = *(argv);
+
+        while (*(++argv))
         {
-            lineno++;
-            if ((strstr(line, *argv) != NULL) != except)
-            {
-                if (number)
-                    printf("%ld:", lineno);
-                printf("%s", line);
-                found++;
+            if ((fp = fopen(*argv, "r")) == NULL){
+                fprintf(stderr, "\nerror: can't open '%s' file\n", *argv);
+                exit(1);
             }
+
+            found += find(fp, *argv, pattern, except, number);
         }
+    }
 
     return found;
 }
 
-int _getline(char s[], int lim)
+int find(FILE *fp, char *filename, char *pattern, int except, int number)
 {
-    int c, i;
-        for (i = 0; i < lim - 1 && (c = getchar()) != EOF && c != '\n'; ++i)
-            s[i] = c;
-    if (c == '\n')
+    int found = 0, lineno = 0;
+    char line[MAXLINE];
+
+    while (fgets(line, MAXLINE, fp) != NULL)
     {
-        s[i] = c;
-        ++i;
+        lineno++;
+        if ((strstr(line, pattern) != NULL) != except)
+        {
+            if (number)
+                printf("%d - ", lineno);
+
+            printf("'%s' - %s", filename, line);
+            found++;
+        }
     }
-    s[i] = '\0';
-    return i;
+
+    return found;
 }
