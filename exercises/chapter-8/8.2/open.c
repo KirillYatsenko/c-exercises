@@ -10,7 +10,7 @@ FILE _iob[OPEN_MAX] = {
     {0, (char *)0, (char *)0, {0, 1, 0, 0, 0}, 1},
     {0, (char *)0, (char *)0, {0, 1, 1, 0, 0}, 2}};
 
-FILE *_fopen(char *name, char *mode)
+FILE *fopen(char *name, char *mode)
 {
     int fd;
     FILE *fp;
@@ -42,9 +42,40 @@ FILE *_fopen(char *name, char *mode)
     if (*mode == 'r')
         fp->flags._READ = 1;
     else
-        fp->flags._WRITE = 1;    
+        fp->flags._WRITE = 1;
 
     return fp;
+}
+
+int fflush(FILE *fp)
+{
+    if(!fp->flags._WRITE)
+        return _ERR;
+
+    int flushed = write(fp->fd, fp->base, fp->ptr - fp->base);
+    
+    fp->ptr = fp->base;
+    fp->cnt = 0;
+
+    return flushed;
+}
+
+int fclose(FILE *fp)
+{
+    if(fp->flags._ERR)
+        return _ERR;
+
+    int flushed = 0;
+    if(fp->flags._WRITE)
+        flushed = fflush(fp);
+    
+    fp->cnt = 0;
+    fp->ptr = fp->base;
+    free(fp->base);
+    
+    close(fp->fd);
+
+    return flushed;
 }
 
 int _fillbuf(FILE *fp)
@@ -71,4 +102,22 @@ int _fillbuf(FILE *fp)
         return EOF;
     }
     return (unsigned char)*fp->ptr++;
+}
+
+int _flushbuf(int c, FILE *fp)
+{
+    if (!fp->flags._WRITE)
+        return _ERR;
+
+    int bufsize = (fp->flags._UNBUF) ? 1 : BUFSIZ;
+    if (fp->base == NULL)
+        if ((fp->base = (char *)malloc(bufsize)) == NULL)
+            return EOF;
+
+    fp->cnt = write(fp->fd, fp->base, bufsize) - 1;
+
+    fp->ptr = fp->base;
+    *(fp->base) = c;
+
+    return c;
 }

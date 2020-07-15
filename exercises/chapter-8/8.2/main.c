@@ -2,15 +2,14 @@
 
 int main()
 {
-    FILE *fp = _fopen("file.txt", "r");
+    FILE *fp = fopen("file.txt", "r");
     if(fp == NULL)
         return 1;
 
-    char buf[100];
-    int c, i = 0;
+    int c;
     while((c = getc(fp)) != EOF)
-        buf[i++] = c;
+        putc(c, stdout);
 
-    buf[i] = '\0';
+    fclose(stdout);
     return 0;
 }
