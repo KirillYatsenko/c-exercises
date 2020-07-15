@@ -7,6 +7,9 @@ int main()
         return 1;
 
     int c;
+
+    fseek(fp, 4, 0);
+
     while((c = getc(fp)) != EOF)
         putc(c, stdout);
 

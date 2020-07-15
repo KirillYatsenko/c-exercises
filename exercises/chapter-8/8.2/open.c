@@ -78,6 +78,20 @@ int fclose(FILE *fp)
     return flushed;
 }
 
+int fseek(FILE *fp, long offset, int origin)
+{
+    if(fp->flags._ERR)
+        return 1;
+
+    lseek(fp->fd, offset, origin);
+
+    fp->ptr = fp->base;
+    fp->cnt = 0;
+    free(fp->base);
+
+    return 0;
+}
+
 int _fillbuf(FILE *fp)
 {
     int bufsize;

@@ -24,6 +24,7 @@ typedef struct _iobuf
 FILE *fopen(char *name, char *mode);
 int fflush(FILE*);
 int fclose(FILE*);
+int fseek(FILE*, long, int);
 
 extern FILE _iob[OPEN_MAX];
 
