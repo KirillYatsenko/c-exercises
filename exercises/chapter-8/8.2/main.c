@@ -2,7 +2,6 @@
 
 int main()
 {
-
     FILE *fp = _fopen("file.txt", "r");
     if(fp == NULL)
         return 1;

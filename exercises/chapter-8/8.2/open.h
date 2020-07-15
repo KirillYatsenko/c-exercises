@@ -3,13 +3,21 @@
 #define BUFSIZ 1024
 #define OPEN_MAX 20
 
+typedef struct _ioflags
+{
+    int _READ;
+    int _WRITE;
+    int _UNBUF;
+    int _EOF;
+    int _ERR;
+} FLAGS;
 
 typedef struct _iobuf
 {
     int cnt;
     char *ptr;
     char *base;
-    int flag;
+    FLAGS flags;
     int fd;
 } FILE;
 
