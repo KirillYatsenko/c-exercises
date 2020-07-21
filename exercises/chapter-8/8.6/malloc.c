@@ -1,12 +1,12 @@
 #include "malloc.h"
 
 #define NULL 0
-#define NALLOC 1024 
+#define NALLOC 1024
 
 static Header *morecore(unsigned nu);
 
-static Header base;          
-static Header *freep = NULL; 
+static Header base;
+static Header *freep = NULL;
 
 void *malloc(unsigned nbytes)
 {
@@ -21,11 +21,11 @@ void *malloc(unsigned nbytes)
     for (p = prevp->s.ptr;; prevp = p, p = p->s.ptr)
     {
         if (p->s.size >= nunits)
-        {                            
-            if (p->s.size == nunits) 
+        {
+            if (p->s.size == nunits)
                 prevp->s.ptr = p->s.ptr;
             else
-            { 
+            {
                 p->s.size -= nunits;
                 p += p->s.size;
                 p->s.size = nunits;
@@ -33,9 +33,9 @@ void *malloc(unsigned nbytes)
             freep = prevp;
             return (void *)(p + 1);
         }
-        if (p == freep) 
+        if (p == freep)
             if ((p = morecore(nunits)) == NULL)
-                return NULL; 
+                return NULL;
     }
 }
 
@@ -46,7 +46,7 @@ static Header *morecore(unsigned nu)
     if (nu < NALLOC)
         nu = NALLOC;
     cp = sbrk(nu * sizeof(Header));
-    if (cp == (char *)-1) 
+    if (cp == (char *)-1)
         return NULL;
     up = (Header *)cp;
     up->s.size = nu;
@@ -60,7 +60,7 @@ void free(void *ap)
     bp = (Header *)ap - 1;
     for (p = freep; !(bp > p && bp < p->s.ptr); p = p->s.ptr)
         if (p >= p->s.ptr && (bp > p || bp < p->s.ptr))
-            break; 
+            break;
     if (bp + bp->s.size == p->s.ptr)
     {
         bp->s.size += p->s.ptr->s.size;
@@ -76,4 +76,15 @@ void free(void *ap)
     else
         p->s.ptr = bp;
     freep = p;
+}
+
+void *calloc(unsigned nbytes, unsigned size)
+{
+    char *malloced = malloc(nbytes);
+
+    for (int i = 0; i < nbytes; i++)
+        for (int j = 0; j < size; j++)
+            malloced[i + j] = 0;
+
+    return malloced;
 }
