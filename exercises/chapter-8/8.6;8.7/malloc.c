@@ -8,8 +8,11 @@ static Header *morecore(unsigned nu);
 static Header base;
 static Header *freep = NULL;
 
-void *malloc(unsigned nbytes)
+void *_malloc(unsigned nbytes)
 {
+    if(nbytes == 0)
+        return NULL;
+
     Header *p, *prevp;
     unsigned nunits;
     nunits = (nbytes + sizeof(Header) - 1) / sizeof(Header) + 1;
@@ -50,14 +53,18 @@ static Header *morecore(unsigned nu)
         return NULL;
     up = (Header *)cp;
     up->s.size = nu;
-    free((void *)(up + 1));
+    _free((void *)(up + 1));
     return freep;
 }
 
-void free(void *ap)
+void _free(void *ap)
 {
     Header *bp, *p;
     bp = (Header *)ap - 1;
+
+    if(bp->s.size <= 0)
+        return;
+
     for (p = freep; !(bp > p && bp < p->s.ptr); p = p->s.ptr)
         if (p >= p->s.ptr && (bp > p || bp < p->s.ptr))
             break;
@@ -78,13 +85,12 @@ void free(void *ap)
     freep = p;
 }
 
-void *calloc(unsigned nbytes, unsigned size)
+void *_calloc(unsigned n, unsigned size)
 {
-    char *malloced = malloc(nbytes);
+    char *malloced = _malloc(n*size);
 
-    for (int i = 0; i < nbytes; i++)
-        for (int j = 0; j < size; j++)
-            malloced[i + j] = 0;
+    for (int i = 0; i < n * size; i++)
+        malloced[i] = 0;
 
     return malloced;
 }
